@@ -139,12 +139,14 @@ footer a{text-decoration:none}
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim())){fail(email,'Enter an email address like you@company.com.');bad.push(email)}
     if(bad.length){bad[0].focus();return}
     busy=true;send.setAttribute('aria-disabled','true');send.textContent='Sending...';
-    var d=new FormData(f);
+    var d=new FormData(f),tz='';
+    // Their time zone, so a reply waits for their morning. Nothing else about them is read.
+    try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''}catch(e){}
     // The server treats a send under 2.5 s as a bot. Autofill and a quick click can be a real person,
     // so the page waits out the difference rather than lose them.
     setTimeout(function(){
     fetch('/api/inquiry',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      name:d.get('name'),email:d.get('email'),company:d.get('company'),problem:d.get('problem'),need:d.getAll('need'),more:d.get('more'),site:d.get('site'),started:started
+      name:d.get('name'),email:d.get('email'),company:d.get('company'),problem:d.get('problem'),need:d.getAll('need'),more:d.get('more'),site:d.get('site'),started:started,tz:tz
     })}).then(function(r){return r.json().then(function(b){return{ok:r.ok,b:b}})}).then(function(o){
       if(!o.ok){
         idle();

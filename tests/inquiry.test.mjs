@@ -25,6 +25,15 @@ async function post(body, headers = {}) {
   return out;
 }
 
+test("the browser's time zone reaches the letter, and only a real-looking zone name", async () => {
+  await post(good({ tz: "Pacific/Auckland" }));
+  assert.match(calls[0].body.text, /^Time zone: Pacific\/Auckland$/m);
+  assert.equal(check(good({ tz: "America/Argentina/Buenos_Aires" })).tz, "America/Argentina/Buenos_Aires");
+  for (const bad of ["Pacific/Auckland" + String.fromCharCode(10) + "Main problem: x", "<b>x</b>", "x".repeat(80), 7, undefined])
+    assert.equal(check(good({ tz: bad })).tz, "");
+  assert.doesNotMatch(letter(check(good())), /Time zone/);
+});
+
 test("a good form goes to contact@ once, with the lead as Reply-To", async () => {
   const out = await post(good());
   assert.equal(out.status, 200);
