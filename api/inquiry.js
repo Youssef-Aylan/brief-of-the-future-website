@@ -20,6 +20,9 @@ const NEEDS = {
 
 const clean = (value, most) => (typeof value === "string" ? value.trim().slice(0, most) : "");
 const oneLine = (value) => value.replace(/[\r\n<>"]+/g, " ").trim();
+// The browser's own zone name, such as Pacific/Auckland, so a reply waits for their morning.
+const zone = (value) =>
+  (typeof value === "string" && value.length <= 64 && /^[A-Za-z_]+(\/[A-Za-z0-9_+-]+){0,2}$/.test(value) ? value : "");
 
 export function check(body) {
   const name = oneLine(clean(body.name, 100));
@@ -29,11 +32,13 @@ export function check(body) {
   if (!/^[^@\s<>"]+@[^@\s<>"]+\.[^@\s<>"]+$/.test(email)) errors.email = "Enter an email address like you@company.com.";
   const problem = PROBLEMS[Object.hasOwn(PROBLEMS, body.problem) ? body.problem : ""] || "";
   const needs = (Array.isArray(body.need) ? body.need : []).filter((n) => Object.hasOwn(NEEDS, n)).map((n) => NEEDS[n]);
-  return { errors, name, email, company: oneLine(clean(body.company, 200)), problem, needs, more: clean(body.more, 4000) };
+  return { errors, name, email, company: oneLine(clean(body.company, 200)), problem, needs, more: clean(body.more, 4000),
+    tz: zone(body.tz) };
 }
 
-export function letter({ name, email, company, problem, needs, more }) {
+export function letter({ name, email, company, problem, needs, more, tz }) {
   const lines = [`Name: ${name}`, `Email: ${email}`];
+  if (tz) lines.push(`Time zone: ${tz}`);
   if (company) lines.push(`Company: ${company}`);
   lines.push(`Main problem: ${problem || "not chosen"}`, `Where they want AI: ${needs.join(", ") || "not chosen"}`);
   if (more) lines.push("", more);
